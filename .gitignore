@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.output/
+.vinxi/
+.vercel/
+
+# Nitro
+.nitro/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Temp / Lovable source dumps
+new one2 /
