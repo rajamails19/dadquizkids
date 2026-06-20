@@ -27,3 +27,12 @@ bun-debug.log*
 
 # Temp / Lovable source dumps
 new one2 /
+
+# Lovable metadata (not needed in repo)
+.lovable/
+
+# npm lockfile (project uses bun)
+package-lock.json
+
+# Claude Code project config
+.claude/
