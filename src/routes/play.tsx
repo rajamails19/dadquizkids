@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMode } from "@/lib/mode";
 import { ModeToggle } from "@/components/ModeToggle";
 import { buildFeed, buildTypeFeed, type FeedCard, type QuizCard } from "@/lib/feed";
+import { speak, speakResult, cancelSpeak } from "@/lib/tts";
+import { playCelebration, playBuzz } from "@/lib/sounds";
 import {
   playAnimalSound,
   type MiniGameCardKind,
@@ -32,57 +34,7 @@ export const Route = createFileRoute("/play")({
   component: PlayPage,
 });
 
-/* ---------------- tiny sound effects ---------------- */
-let _ctx: AudioContext | null = null;
-function getCtx() {
-  if (typeof window === "undefined") return null;
-  if (!_ctx) {
-    try {
-      _ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    } catch {
-      return null;
-    }
-  }
-  if (_ctx?.state === "suspended") _ctx.resume().catch(() => {});
-  return _ctx;
-}
-function tone(freq: number, duration = 0.15, type: OscillatorType = "sine", gain = 0.18) {
-  const ctx = getCtx();
-  if (!ctx) return;
-  const o = ctx.createOscillator();
-  const g = ctx.createGain();
-  o.type = type;
-  o.frequency.value = freq;
-  g.gain.setValueAtTime(0, ctx.currentTime);
-  g.gain.linearRampToValueAtTime(gain, ctx.currentTime + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-  o.connect(g).connect(ctx.destination);
-  o.start();
-  o.stop(ctx.currentTime + duration + 0.02);
-}
-function chime() {
-  tone(880, 0.12, "triangle", 0.2);
-  setTimeout(() => tone(1320, 0.18, "triangle", 0.18), 90);
-}
-function buzz() {
-  tone(180, 0.18, "sawtooth", 0.12);
-  setTimeout(() => tone(140, 0.22, "sawtooth", 0.1), 90);
-}
-
-/* ---------------- TTS ---------------- */
-function speak(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  try {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 0.95;
-    u.pitch = 1.1;
-    u.volume = 0.9;
-    window.speechSynthesis.speak(u);
-  } catch {
-    /* ignore */
-  }
-}
+// Sound effects from shared lib; TTS from @/lib/tts
 
 /* ---------------- Page ---------------- */
 function PlayPage() {
@@ -90,12 +42,9 @@ function PlayPage() {
   const { type } = Route.useSearch();
   const isFiltered = !!type;
 
-  const initialFeed = useMemo(() => {
-    if (type) return buildTypeFeed(mode, type, 8);
-    return buildFeed(mode);
-  }, [mode, type]);
-
-  const [feed, setFeed] = useState<FeedCard[]>(initialFeed);
+  // Empty on server — useEffect below builds the feed client-side only,
+  // avoiding the SSR hydration mismatch caused by Math.random() in shuffle().
+  const [feed, setFeed] = useState<FeedCard[]>([]);
   const [idx, setIdx] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -182,17 +131,32 @@ function PlayPage() {
 
       {/* Stack viewport */}
       <div ref={containerRef} className="absolute inset-0">
-        {card && (
+        {card ? (
           <CardView
             key={card.id}
             card={card}
-            onAnswered={(ok) => {
-              if (ok) chime();
-              else buzz();
-              window.setTimeout(advance, ok ? 900 : 1800);
+            mode={mode}
+            onAnswered={(ok, correctText, fact) => {
+              cancelSpeak();
+              if (ok) {
+                playCelebration();
+                speakResult(true, mode, correctText ?? "", fact);
+                window.setTimeout(advance, 3500);
+              } else {
+                playBuzz();
+                speakResult(false, mode, correctText ?? "", fact);
+                // Don't auto-advance on wrong — let the voice finish, kid taps ↓
+              }
             }}
-            onWowDone={() => window.setTimeout(advance, 2800)}
+            onWowDone={() => { cancelSpeak(); window.setTimeout(advance, 2800); }}
           />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <div className="glass rounded-3xl px-8 py-6 text-center text-muted-foreground">
+              <div className="text-4xl">✨</div>
+              <div className="mt-2 text-sm font-bold">Loading cards…</div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -229,11 +193,13 @@ function PlayPage() {
 /* ---------------- Card dispatch ---------------- */
 function CardView({
   card,
+  mode,
   onAnswered,
   onWowDone,
 }: {
   card: FeedCard;
-  onAnswered: (ok: boolean) => void;
+  mode: import("@/lib/mode").Mode;
+  onAnswered: (ok: boolean, correctText?: string, fact?: string) => void;
   onWowDone: () => void;
 }) {
   useEffect(() => {
@@ -242,13 +208,9 @@ function CardView({
     else if (card.kind === "wow") speakText = card.fact;
     else if (card.kind === "tf") speakText = card.statement;
     else if ("prompt" in card) speakText = card.prompt;
-    if (speakText) speak(speakText);
+    if (speakText) speak(speakText, mode);
     if (card.kind === "wow") onWowDone();
-    return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
+    return () => { cancelSpeak(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id]);
 
@@ -278,7 +240,7 @@ function CardView({
         <div className="glass mb-4 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
           {card.topic}
         </div>
-        {card.kind === "quiz" && <QuizBody card={card} onAnswered={onAnswered} />}
+        {card.kind === "quiz" && <QuizBody card={card} mode={mode} onAnswered={onAnswered} />}
         {card.kind === "odd" && <OddBody card={card} onAnswered={onAnswered} />}
         {card.kind === "bigger" && <BiggerBody card={card} onAnswered={onAnswered} />}
         {card.kind === "count" && <CountBody card={card} onAnswered={onAnswered} />}
@@ -309,14 +271,14 @@ function FactLine({ ok, fact, correctText }: { ok: boolean; fact?: string; corre
 
 /* ---------------- Bodies ---------------- */
 
-function QuizBody({ card, onAnswered }: { card: QuizCard; onAnswered: (ok: boolean) => void }) {
+function QuizBody({ card, mode, onAnswered }: { card: QuizCard; mode: import("@/lib/mode").Mode; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const q = card.question;
   const [picked, setPicked] = useState<number | null>(null);
   const isBigEmoji = /\p{Emoji}/u.test(q.visual ?? "") && (q.visual?.length ?? 0) <= 6;
   function pick(i: number) {
     if (picked !== null) return;
     setPicked(i);
-    onAnswered(i === q.answer);
+    onAnswered(i === q.answer, q.options[q.answer], q.fact);
   }
   return (
     <>
@@ -325,7 +287,7 @@ function QuizBody({ card, onAnswered }: { card: QuizCard; onAnswered: (ok: boole
       </div>
       <p className="mt-4 max-w-xl text-center text-lg font-semibold text-foreground/80">
         {q.prompt}
-        <button onClick={() => speak(q.prompt || q.visual)} className="ml-2 align-middle text-base opacity-70 hover:opacity-100" aria-label="Read aloud">🔊</button>
+        <button onClick={() => speak(q.prompt || q.visual, mode)} className="ml-2 align-middle text-base opacity-70 hover:opacity-100" aria-label="Read aloud">🔊</button>
       </p>
       <div className="mt-6 grid w-full max-w-md gap-3 sm:grid-cols-2">
         {q.options.map((opt: string, i: number) => {
@@ -349,12 +311,12 @@ function QuizBody({ card, onAnswered }: { card: QuizCard; onAnswered: (ok: boole
   );
 }
 
-function OddBody({ card, onAnswered }: { card: OddOneOutCard; onAnswered: (ok: boolean) => void }) {
+function OddBody({ card, onAnswered }: { card: OddOneOutCard; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const [picked, setPicked] = useState<number | null>(null);
   function pick(i: number) {
     if (picked !== null) return;
     setPicked(i);
-    onAnswered(i === card.answer);
+    onAnswered(i === card.answer, card.items[card.answer], card.fact);
   }
   return (
     <>
@@ -376,7 +338,7 @@ function OddBody({ card, onAnswered }: { card: OddOneOutCard; onAnswered: (ok: b
   );
 }
 
-function BiggerBody({ card, onAnswered }: { card: BiggerCard; onAnswered: (ok: boolean) => void }) {
+function BiggerBody({ card, onAnswered }: { card: BiggerCard; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const [picked, setPicked] = useState<"left" | "right" | null>(null);
   const correct: "left" | "right" = card.mode === "bigger"
     ? (card.left.size > card.right.size ? "left" : "right")
@@ -384,7 +346,8 @@ function BiggerBody({ card, onAnswered }: { card: BiggerCard; onAnswered: (ok: b
   function pick(side: "left" | "right") {
     if (picked) return;
     setPicked(side);
-    onAnswered(side === correct);
+    const correctLabel = (correct === "left" ? card.left : card.right).label;
+    onAnswered(side === correct, correctLabel, card.fact);
   }
   const cell = (side: "left" | "right", item: BiggerCard["left"]) => {
     const showState = picked !== null;
@@ -410,7 +373,7 @@ function BiggerBody({ card, onAnswered }: { card: BiggerCard; onAnswered: (ok: b
   );
 }
 
-function CountBody({ card, onAnswered }: { card: CountCard; onAnswered: (ok: boolean) => void }) {
+function CountBody({ card, onAnswered }: { card: CountCard; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const grid = useMemo<string[]>(() => {
     const total = 12;
     const cells: string[] = [];
@@ -430,7 +393,7 @@ function CountBody({ card, onAnswered }: { card: CountCard; onAnswered: (ok: boo
     const item = grid[i];
     if (item !== card.target) {
       setDone(true);
-      onAnswered(false);
+      onAnswered(false, `${card.count} ${card.target}`, card.fact);
       return;
     }
     if (tapped.has(i)) return;
@@ -440,7 +403,7 @@ function CountBody({ card, onAnswered }: { card: CountCard; onAnswered: (ok: boo
     const correctTaps = [...next].filter((x) => grid[x] === card.target).length;
     if (correctTaps >= card.count) {
       setDone(true);
-      onAnswered(true);
+      onAnswered(true, `${card.count} ${card.target}`, card.fact);
     }
   }
   return (
@@ -460,7 +423,7 @@ function CountBody({ card, onAnswered }: { card: CountCard; onAnswered: (ok: boo
   );
 }
 
-function ColorBody({ card, onAnswered }: { card: ColorHuntCard; onAnswered: (ok: boolean) => void }) {
+function ColorBody({ card, onAnswered }: { card: ColorHuntCard; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const targetCount = card.items.filter((x) => x.color === card.color).length;
   const [tapped, setTapped] = useState<Set<number>>(new Set());
   const [done, setDone] = useState(false);
@@ -469,7 +432,7 @@ function ColorBody({ card, onAnswered }: { card: ColorHuntCard; onAnswered: (ok:
     const item = card.items[i];
     if (item.color !== card.color) {
       setDone(true);
-      onAnswered(false);
+      onAnswered(false, card.colorName, card.fact);
       return;
     }
     if (tapped.has(i)) return;
@@ -478,7 +441,7 @@ function ColorBody({ card, onAnswered }: { card: ColorHuntCard; onAnswered: (ok:
     setTapped(next);
     if (next.size >= targetCount) {
       setDone(true);
-      onAnswered(true);
+      onAnswered(true, card.colorName, card.fact);
     }
   }
   return (
@@ -503,12 +466,12 @@ function ColorBody({ card, onAnswered }: { card: ColorHuntCard; onAnswered: (ok:
   );
 }
 
-function SequenceBody({ card, onAnswered }: { card: SequenceCard; onAnswered: (ok: boolean) => void }) {
+function SequenceBody({ card, onAnswered }: { card: SequenceCard; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const [picked, setPicked] = useState<number | null>(null);
   function pick(i: number) {
     if (picked !== null) return;
     setPicked(i);
-    onAnswered(i === card.answer);
+    onAnswered(i === card.answer, card.options[card.answer], card.fact);
   }
   return (
     <>
@@ -535,7 +498,7 @@ function SequenceBody({ card, onAnswered }: { card: SequenceCard; onAnswered: (o
   );
 }
 
-function SoundBody({ card, onAnswered }: { card: SoundMatchCard; onAnswered: (ok: boolean) => void }) {
+function SoundBody({ card, onAnswered }: { card: SoundMatchCard; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const [picked, setPicked] = useState<number | null>(null);
   useEffect(() => {
     const t = window.setTimeout(() => playAnimalSound(card.sound), 350);
@@ -544,7 +507,7 @@ function SoundBody({ card, onAnswered }: { card: SoundMatchCard; onAnswered: (ok
   function pick(i: number) {
     if (picked !== null) return;
     setPicked(i);
-    onAnswered(i === card.answer);
+    onAnswered(i === card.answer, card.options[card.answer].label, card.fact);
   }
   return (
     <>
@@ -577,12 +540,12 @@ function SoundBody({ card, onAnswered }: { card: SoundMatchCard; onAnswered: (ok
   );
 }
 
-function TFBody({ card, onAnswered }: { card: TrueFalseCard; onAnswered: (ok: boolean) => void }) {
+function TFBody({ card, onAnswered }: { card: TrueFalseCard; onAnswered: (ok: boolean, correctText?: string, fact?: string) => void }) {
   const [picked, setPicked] = useState<boolean | null>(null);
   function pick(v: boolean) {
     if (picked !== null) return;
     setPicked(v);
-    onAnswered(v === card.answer);
+    onAnswered(v === card.answer, card.answer ? "TRUE" : "FALSE", card.fact);
   }
   const btn = (val: boolean, label: string, emoji: string) => {
     const showState = picked !== null;

@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as QuizQuizIdRouteImport } from './routes/quiz.$quizId'
 import { Route as ArenaWingsOfFireRouteImport } from './routes/arena.wings-of-fire'
 import { Route as ArenaPrincessesRouteImport } from './routes/arena.princesses'
+import { Route as ApiTtsRouteImport } from './routes/api/tts'
 
 const PlayRoute = PlayRouteImport.update({
   id: '/play',
@@ -40,10 +41,16 @@ const ArenaPrincessesRoute = ArenaPrincessesRouteImport.update({
   path: '/arena/princesses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTtsRoute = ApiTtsRouteImport.update({
+  id: '/api/tts',
+  path: '/api/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/play': typeof PlayRoute
+  '/api/tts': typeof ApiTtsRoute
   '/arena/princesses': typeof ArenaPrincessesRoute
   '/arena/wings-of-fire': typeof ArenaWingsOfFireRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/play': typeof PlayRoute
+  '/api/tts': typeof ApiTtsRoute
   '/arena/princesses': typeof ArenaPrincessesRoute
   '/arena/wings-of-fire': typeof ArenaWingsOfFireRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/play': typeof PlayRoute
+  '/api/tts': typeof ApiTtsRoute
   '/arena/princesses': typeof ArenaPrincessesRoute
   '/arena/wings-of-fire': typeof ArenaWingsOfFireRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
@@ -68,6 +77,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/play'
+    | '/api/tts'
     | '/arena/princesses'
     | '/arena/wings-of-fire'
     | '/quiz/$quizId'
@@ -75,6 +85,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/play'
+    | '/api/tts'
     | '/arena/princesses'
     | '/arena/wings-of-fire'
     | '/quiz/$quizId'
@@ -82,6 +93,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/play'
+    | '/api/tts'
     | '/arena/princesses'
     | '/arena/wings-of-fire'
     | '/quiz/$quizId'
@@ -90,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PlayRoute: typeof PlayRoute
+  ApiTtsRoute: typeof ApiTtsRoute
   ArenaPrincessesRoute: typeof ArenaPrincessesRoute
   ArenaWingsOfFireRoute: typeof ArenaWingsOfFireRoute
   QuizQuizIdRoute: typeof QuizQuizIdRoute
@@ -132,12 +145,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArenaPrincessesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tts': {
+      id: '/api/tts'
+      path: '/api/tts'
+      fullPath: '/api/tts'
+      preLoaderRoute: typeof ApiTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PlayRoute: PlayRoute,
+  ApiTtsRoute: ApiTtsRoute,
   ArenaPrincessesRoute: ArenaPrincessesRoute,
   ArenaWingsOfFireRoute: ArenaWingsOfFireRoute,
   QuizQuizIdRoute: QuizQuizIdRoute,

@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useRouter, notFound } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { speakResult, cancelSpeak } from "@/lib/tts";
+import { playCelebration, playBuzz } from "@/lib/sounds";
 import confetti from "canvas-confetti";
 import { ModeToggle } from "@/components/ModeToggle";
 import { getQuiz, getQuizzesByMode } from "@/lib/quizzes";
@@ -52,15 +54,6 @@ export const Route = createFileRoute("/quiz/$quizId")({
   component: QuizPage,
 });
 
-// ── Web Speech helper ──────────────────────────────────────────────
-function speak(text: string, ttsEnabled: boolean) {
-  if (!ttsEnabled || typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.88;
-  u.pitch = 1.15;
-  window.speechSynthesis.speak(u);
-}
 
 // ── Main component ─────────────────────────────────────────────────
 function QuizPage() {
@@ -80,8 +73,11 @@ function QuizPage() {
     setIndex(0); setPicked(null); setScore(0); setDone(false); setAnimKey(0);
   }, [quiz.id]);
 
-  // Cleanup timer on unmount
-  useEffect(() => () => { if (autoTimer.current) clearTimeout(autoTimer.current); }, []);
+  // Cleanup timer and audio on unmount
+  useEffect(() => () => {
+    if (autoTimer.current) clearTimeout(autoTimer.current);
+    cancelSpeak();
+  }, []);
 
   const total = quiz.questions.length;
   const q = quiz.questions[index]!;
@@ -112,6 +108,7 @@ function QuizPage() {
     if (isCorrect) {
       setScore((s) => s + 1);
       const isGirl = quiz.mode === "girl";
+      // Confetti burst
       confetti({
         particleCount: isGirl ? 120 : 80,
         spread: isGirl ? 80 : 60,
@@ -121,12 +118,21 @@ function QuizPage() {
           : ["#38bdf8", "#f97316", "#facc15", "#4ade80", "#e879f9"],
         scalar: isGirl ? 1.2 : 1,
       });
-      // Read aloud any fun fact first, then auto-advance after 1.8s
-      if (q.fact) speak(q.fact, ttsEnabled);
-      autoTimer.current = setTimeout(next, 1800);
+      // 🎉 Claps + chime sound, then voice celebrates + reads the fact
+      if (ttsEnabled) {
+        playCelebration();
+        cancelSpeak();
+        speakResult(true, mode, q.options[q.answer], q.fact);
+      }
+      // Give enough time for the celebration voice to finish before advancing
+      autoTimer.current = setTimeout(next, 3000);
     } else {
-      // Wrong: read the fun fact aloud so kid learns even without reading
-      if (q.fact) speak(q.fact, ttsEnabled);
+      // ❌ Buzz + voice says "Oops! The answer was X." + fact
+      playBuzz();
+      if (ttsEnabled) {
+        cancelSpeak();
+        speakResult(false, mode, q.options[q.answer], q.fact);
+      }
     }
   }
 
