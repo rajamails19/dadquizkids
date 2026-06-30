@@ -24,6 +24,8 @@ export type Question = {
   fact?: string;
   /** Optional emoji per option — shown next to text in girl mode for pre-readers */
   optionEmojis?: string[];
+  /** Optional step-by-step working shown in the side panel after answering */
+  steps?: string[];
 };
 
 export type Quiz = {
@@ -34,6 +36,10 @@ export type Quiz = {
   cover: string;
   accent: string; // tailwind class for chip
   questions: Question[];
+  /** Optional grouping key — e.g. "math-subtraction" renders in its own section */
+  section?: string;
+  /** Badge label shown on the card — e.g. "📖 Lesson" */
+  sectionLabel?: string;
 };
 
 const flagQ = (emoji: string, country: string, distractors: string[], fact?: string): Question => ({
@@ -514,9 +520,356 @@ const boyLandmarks: Quiz = {
   ]),
 };
 
+/* ──────────────────────────────────────────────────────────────
+   5th-GRADE SUBTRACTION  —  Lesson · Practice · Quiz
+   ────────────────────────────────────────────────────────────── */
+
+const boyMathSubLesson: Quiz = {
+  id: "boy-math-sub-lesson",
+  mode: "boy",
+  section: "math-subtraction",
+  sectionLabel: "📖 Lesson",
+  title: "Subtraction: Lesson",
+  tagline: "Understand the WHY behind subtraction",
+  cover: coverBlocks,
+  accent: "from-sky-400 to-blue-500",
+  questions: finalize([
+    {
+      visual: "Minuend",
+      prompt: "In 8 − 3 = 5, what is the MINUEND?",
+      options: ["8", "3", "5", "−"],
+      answer: 0,
+      fact: "The minuend is the starting number — the one you subtract FROM.",
+      steps: ["Write the equation: 8 − 3 = 5", "The FIRST number (8) is what we start with", "We subtract FROM this number", "So the minuend = 8 ✓"],
+    },
+    {
+      visual: "Subtrahend",
+      prompt: "In 8 − 3 = 5, what is the SUBTRAHEND?",
+      options: ["3", "8", "5", "="],
+      answer: 0,
+      fact: "The subtrahend is the number being taken away.",
+      steps: ["Write the equation: 8 − 3 = 5", "The SECOND number (3) is taken away", "Think: 'subtract' → 'subtrahend'", "So the subtrahend = 3 ✓"],
+    },
+    {
+      visual: "Difference",
+      prompt: "In 8 − 3 = 5, what is the DIFFERENCE?",
+      options: ["5", "8", "3", "11"],
+      answer: 0,
+      fact: "The difference is the result — what remains after subtracting.",
+      steps: ["Write: 8 − 3 = 5", "After subtracting, we get the answer", "This result is called the DIFFERENCE", "Difference = 5 ✓"],
+    },
+    {
+      visual: "🔄 Regroup",
+      prompt: "In 53 − 27, do we need to regroup in the ones column?",
+      options: ["Yes — 3 < 7, so borrow from tens", "No — always subtract top from bottom", "Only if numbers are even", "Never needed"],
+      answer: 0,
+      fact: "Since 3 < 7, borrow 1 ten → ones become 13. Then 13−7=6, 4−2=2. Answer: 26.",
+      steps: ["Ones column: 3 − 7", "Problem! 3 is less than 7", "Borrow 1 ten from the tens place", "Ones: 13 − 7 = 6", "Tens: 4 − 2 = 2 (tens went 5→4)", "Answer: 26 ✓"],
+    },
+    {
+      visual: "1 ten = ?",
+      prompt: "When regrouping, 1 ten equals how many ones?",
+      options: ["10 ones", "5 ones", "100 ones", "2 ones"],
+      answer: 0,
+      fact: "Place value rule: 1 ten = 10 ones, 1 hundred = 10 tens, 1 thousand = 10 hundreds.",
+      steps: ["Think of a $10 note", "Break it into $1 coins → 10 coins", "Same with numbers: 1 ten = 10 ones", "1 hundred = 10 tens", "1 thousand = 10 hundreds ✓"],
+    },
+    {
+      visual: "5,000 − 1",
+      prompt: "Why is 5,000 − 1 tricky?",
+      options: ["Must regroup through three zeros", "The 5 is too big", "You can't subtract from 5,000", "It's actually easy"],
+      answer: 0,
+      fact: "5,000 → 4,999. You regroup thousands → hundreds → tens → ones.",
+      steps: ["Ones: 0 − 1, can't! Need to borrow", "Tens: also 0 → borrow from hundreds", "Hundreds: also 0 → borrow from thousands", "5 thousands → 4 thousands, 10 hundreds", "10 hundreds → 9 hundreds, 10 tens", "10 tens → 9 tens, 10 ones", "10 − 1 = 9 ones → Answer: 4,999 ✓"],
+    },
+    {
+      visual: "✅ Check",
+      prompt: "Best way to check if 100 − 37 = 63 is correct?",
+      options: ["Add: 63 + 37 = 100 ✓", "Subtract again", "Multiply by 2", "Divide by the answer"],
+      answer: 0,
+      fact: "Subtraction and addition are inverse operations — they undo each other.",
+      steps: ["You got: 100 − 37 = 63", "To verify, REVERSE the operation", "Add the answer + subtrahend", "63 + 37 = 100", "100 = 100 ✓ Correct!"],
+    },
+    {
+      visual: "n − n",
+      prompt: "Any number minus ITSELF equals…",
+      options: ["0", "1", "2", "The number"],
+      answer: 0,
+      fact: "e.g. 9,999 − 9,999 = 0. Subtracting a number from itself always gives zero.",
+      steps: ["Try: 999 − 999", "Ones: 9 − 9 = 0", "Tens: 9 − 9 = 0", "Hundreds: 9 − 9 = 0", "Result: 000 = 0 ✓", "Works for ANY number!"],
+    },
+    {
+      visual: "n − 0",
+      prompt: "Any number minus ZERO equals…",
+      options: ["The number itself", "0", "1", "Undefined"],
+      answer: 0,
+      fact: "e.g. 847 − 0 = 847. Subtracting zero changes nothing.",
+      steps: ["Removing ZERO things from a group", "leaves the group exactly the same", "847 − 0 = 847", "Zero is the identity element ✓"],
+    },
+    {
+      visual: "0.7 − 0.3",
+      prompt: "Key rule when subtracting decimals?",
+      options: ["Line up the decimal points", "Ignore the decimals", "Multiply by 10 first", "Use fractions instead"],
+      answer: 0,
+      fact: "0.7 − 0.3 = 0.4. Lining up decimals keeps tenths with tenths.",
+      steps: ["  0.7", "− 0.3", "─────", "Tenths: 7 − 3 = 4", "Answer: 0.4 ✓", "Key: decimal points must line up!"],
+    },
+    {
+      visual: "½ − ¼",
+      prompt: "To subtract ½ − ¼, you must first…",
+      options: ["Find a common denominator", "Flip one fraction", "Add numerators", "Subtract denominators"],
+      answer: 0,
+      fact: "½ = 2/4. So 2/4 − 1/4 = 1/4. Always get a common denominator first!",
+      steps: ["Denominators: 2 and 4 — different!", "Find LCD (Lowest Common Denominator)", "LCD of 2 and 4 = 4", "Convert ½ → 2/4", "Now: 2/4 − 1/4 = 1/4 ✓"],
+    },
+    {
+      visual: "3½ − 1¾",
+      prompt: "Subtracting mixed numbers: when the fraction part is too small, you…",
+      options: ["Borrow 1 from the whole and add it as a fraction", "Subtract whole parts only", "Flip the second fraction", "Convert to decimals always"],
+      answer: 0,
+      fact: "3½ = 3 2/4. Borrow 1 → 2 6/4. Then 2 6/4 − 1 3/4 = 1 3/4.",
+      steps: ["Same denominator: 3 2/4 − 1 3/4", "Fractions: 2/4 < 3/4 → need to borrow!", "Borrow 1 whole from 3 → become 2", "Add 4/4 to fraction: 2/4 + 4/4 = 6/4", "Now: 2 6/4 − 1 3/4", "Whole: 2−1=1, Fraction: 6/4−3/4=3/4", "Answer: 1 3/4 ✓"],
+    },
+    {
+      visual: "📐 Rule",
+      prompt: "Can subtraction be done in any order? (Is it commutative?)",
+      options: ["No — 8 − 3 ≠ 3 − 8", "Yes — same as addition", "Only with even numbers", "Only with decimals"],
+      answer: 0,
+      fact: "Subtraction is NOT commutative. Order matters! 8 − 3 = 5, but 3 − 8 = −5.",
+      steps: ["Addition: 3 + 5 = 5 + 3 = 8 ✓ (commutative)", "Try subtraction: 8 − 3 = 5", "Swap order: 3 − 8 = −5", "5 ≠ −5, so NOT commutative!", "Always keep the ORDER in subtraction ✓"],
+    },
+    {
+      visual: "1,000,000",
+      prompt: "1,000,000 − 999,999 = ?",
+      options: ["1", "11", "101", "1,000"],
+      answer: 0,
+      fact: "Even with huge numbers, the answer can be tiny. Think addition to check!",
+      steps: ["Big numbers can have tiny differences!", "Think: 999,999 + ? = 1,000,000", "999,999 + 1 = 1,000,000 ✓", "So 1,000,000 − 999,999 = 1", "Tip: use the inverse (addition) shortcut ✓"],
+    },
+  ]),
+};
+
+const boyMathSubPractice: Quiz = {
+  id: "boy-math-sub-practice",
+  mode: "boy",
+  section: "math-subtraction",
+  sectionLabel: "✏️ Practice",
+  title: "Subtraction: Practice",
+  tagline: "Drill multi-digit, decimals & fractions",
+  cover: coverScience,
+  accent: "from-emerald-400 to-teal-500",
+  questions: finalize([
+    {
+      visual: "534 − 278", prompt: "Solve:",
+      options: ["256", "266", "246", "276"], answer: 0,
+      steps: ["  5 3 4", "− 2 7 8", "Ones: 4 < 8 → borrow from tens", "Ones → 14, tens 3→2:  14−8 = 6", "Tens: 2 < 7 → borrow from hundreds", "Tens → 12, hundreds 5→4:  12−7 = 5", "Hundreds: 4 − 2 = 2", "Answer: 2 5 6 ✓"],
+    },
+    {
+      visual: "1,000 − 387", prompt: "Solve:",
+      options: ["613", "623", "713", "603"], answer: 0,
+      steps: ["  1,0 0 0", "−    3 8 7", "Ones: 0 < 7 → borrow chain through zeros", "1,000 → 0,999 + 10 ones", "Ones: 10 − 7 = 3", "Tens: 9 − 8 = 1", "Hundreds: 9 − 3 = 6", "Answer: 6 1 3 ✓"],
+    },
+    {
+      visual: "7,500 − 3,847", prompt: "Solve:",
+      options: ["3,653", "3,763", "4,653", "3,543"], answer: 0,
+      steps: ["  7,5 0 0", "− 3,8 4 7", "Ones: 0 < 7, tens also 0 → borrow chain", "Hundreds 5→4, tens 0→9, ones 0→10", "10 − 7 = 3 (ones)", "9 − 4 = 5 (tens)", "Hundreds: 4 < 8 → borrow from thousands", "14 − 8 = 6 (hundreds)", "6 − 3 = 3 (thousands)", "Answer: 3,6 5 3 ✓"],
+    },
+    {
+      visual: "10,000 − 4,999", prompt: "Solve:",
+      options: ["5,001", "5,000", "4,001", "5,011"], answer: 0,
+      steps: ["Shortcut: 10,000 − 5,000 = 5,000", "But we subtract 4,999 not 5,000", "4,999 is 1 LESS than 5,000", "So answer is 1 MORE than 5,000", "10,000 − 4,999 = 5,001 ✓"],
+    },
+    {
+      visual: "8.5 − 3.7", prompt: "Solve (decimals):",
+      options: ["4.8", "4.2", "5.2", "3.8"], answer: 0,
+      steps: ["Line up decimals:", "  8.5", "− 3.7", "Tenths: 5 < 7 → borrow from ones", "Ones 8→7, tenths 5→15:  15−7 = 8", "Ones: 7 − 3 = 4", "Answer: 4.8 ✓"],
+    },
+    {
+      visual: "12.00 − 5.75", prompt: "Solve (decimals):",
+      options: ["6.25", "6.75", "7.25", "6.35"], answer: 0,
+      steps: ["  1 2.0 0", "−  5.7 5", "Hundredths: 0 < 5 → borrow chain", "Ones 2→1, tenths 0→9, hundredths 0→10", "10 − 5 = 5 (hundredths)", "9 − 7 = 2 (tenths)", "Ones: 1 < 5 → borrow from tens: 11−5 = 6", "Answer: 6.2 5 ✓"],
+    },
+    {
+      visual: "100 − 63.5", prompt: "Solve (decimal):",
+      options: ["36.5", "37.5", "36.0", "38.5"], answer: 0,
+      steps: ["Write as 100.0 − 63.5", "Tenths: 0 < 5 → borrow chain", "100.0 → 099.10 (regroup once)", "10 − 5 = 5 (tenths)", "9 − 3 = 6 (ones)", "9 − 6 = 3 (tens)", "Answer: 36.5 ✓"],
+    },
+    {
+      visual: "3/4 − 1/4", prompt: "Solve (fractions):",
+      options: ["2/4 = 1/2", "2/8", "1/4", "3/8"], answer: 0,
+      steps: ["Same denominator (4) → easy!", "Just subtract numerators:", "3 − 1 = 2", "Answer: 2/4", "Simplify: 2/4 = 1/2 ✓"],
+    },
+    {
+      visual: "5/6 − 1/3", prompt: "Solve (LCD = 6):",
+      options: ["3/6 = 1/2", "4/6", "1/6", "2/3"], answer: 0,
+      fact: "1/3 = 2/6. So 5/6 − 2/6 = 3/6 = 1/2.",
+      steps: ["Different denominators: 6 and 3", "LCD = 6", "Convert 1/3: multiply top & bottom by 2", "1/3 = 2/6", "Now: 5/6 − 2/6 = 3/6", "Simplify: 3/6 = 1/2 ✓"],
+    },
+    {
+      visual: "7/8 − 3/8", prompt: "Solve (fractions):",
+      options: ["4/8 = 1/2", "4/16", "1/4", "3/4"], answer: 0,
+      steps: ["Same denominator (8) → easy!", "Subtract numerators: 7 − 3 = 4", "Answer: 4/8", "Simplify: 4/8 = 1/2 ✓"],
+    },
+    {
+      visual: "3½ − 1¼", prompt: "Solve (mixed numbers):",
+      options: ["2¼", "2½", "1¾", "2¾"], answer: 0,
+      fact: "3½ = 3 2/4, 1¼ = 1 1/4. Answer: 2 1/4.",
+      steps: ["LCD = 4: convert ½ → 2/4", "3 2/4 − 1 1/4", "Fractions: 2/4 > 1/4 → no borrowing needed", "Whole: 3 − 1 = 2", "Fraction: 2/4 − 1/4 = 1/4", "Answer: 2 1/4 ✓"],
+    },
+    {
+      visual: "6⅓ − 2⅔", prompt: "Solve (borrow needed):",
+      options: ["3⅔", "4⅓", "3⅓", "4⅔"], answer: 0,
+      fact: "Borrow 1 from 6 → 5 4/3. Then 5 4/3 − 2 2/3 = 3 2/3.",
+      steps: ["LCD = 3: 6 1/3 − 2 2/3", "Fractions: 1/3 < 2/3 → need to borrow!", "Borrow 1 whole from 6 → becomes 5", "Add 3/3 to fraction: 1/3 + 3/3 = 4/3", "Now: 5 4/3 − 2 2/3", "Whole: 5−2=3, Fraction: 4/3−2/3=2/3", "Answer: 3 2/3 ✓"],
+    },
+    {
+      visual: "20,000 − 8,563", prompt: "Solve:",
+      options: ["11,437", "12,437", "11,537", "10,437"], answer: 0,
+      steps: ["  2 0,0 0 0", "−  8,5 6 3", "Regroup the chain of zeros:", "19,999 + 1 = 20,000 (regroup trick)", "Ones: 10−3=7  wait → 0−3: borrow chain", "Result: 11,437", "Check: 11,437 + 8,563 = 20,000 ✓"],
+    },
+    {
+      visual: "15 − 7.89", prompt: "Solve (decimal):",
+      options: ["7.11", "7.01", "8.11", "6.11"], answer: 0,
+      steps: ["Write as 15.00 − 7.89", "Hundredths: 0 < 9 → borrow chain", "Ones 5→4, tenths 0→9, hundredths 0→10", "10 − 9 = 1 (hundredths)", "9 − 8 = 1 (tenths)", "Ones: 4 < 7 → borrow from tens: 14−7=7", "Answer: 7.11 ✓"],
+    },
+    {
+      visual: "1,000,000 − 1", prompt: "Solve:",
+      options: ["999,999", "99,999", "1,000,001", "900,000"], answer: 0,
+      steps: ["1,000,000: one 1 followed by six 0s", "Subtracting 1 triggers a full regroup chain", "All 6 zeros become 9s", "The leading 1 becomes 0 (disappears)", "Answer: 999,999 ✓", "Check: 999,999 + 1 = 1,000,000 ✓"],
+    },
+  ]),
+};
+
+const boyMathSubQuiz: Quiz = {
+  id: "boy-math-sub-quiz",
+  mode: "boy",
+  section: "math-subtraction",
+  sectionLabel: "🏆 Quiz",
+  title: "Subtraction: Quiz",
+  tagline: "Word problems & mixed challenges",
+  cover: coverChess,
+  accent: "from-violet-400 to-purple-600",
+  questions: finalize([
+    {
+      visual: "🛒",
+      prompt: "A shirt costs $24.99. You pay $30. How much change do you get?",
+      options: ["$5.01", "$5.11", "$4.01", "$5.99"],
+      answer: 0,
+      fact: "$30.00 − $24.99 = $5.01",
+      steps: ["Write: $30.00 − $24.99", "Cents: 0 < 9 → borrow chain", "10 − 9 = 1¢", "Dimes: 9 − 9 = 0", "Dollars: 29 − 24 = 5 (after borrow)", "Change = $5.01 ✓"],
+    },
+    {
+      visual: "📏",
+      prompt: "A rope is 8.5 m long. 3.75 m is cut off. How much remains?",
+      options: ["4.75 m", "4.25 m", "5.25 m", "4.50 m"],
+      answer: 0,
+      steps: ["Write: 8.50 − 3.75", "Hundredths: 0 < 5 → borrow: 10−5=5", "Tenths: 4 < 7 → borrow from ones: 14−7=7", "Ones: 7 − 3 = 4", "Answer: 4.75 m ✓"],
+    },
+    {
+      visual: "🏃",
+      prompt: "Rajan ran 5½ km total but turned back after 2¾ km. How far still to go?",
+      options: ["2¾ km", "3 km", "2½ km", "3¼ km"],
+      answer: 0,
+      fact: "5½ − 2¾: borrow → 4 6/4 − 2 3/4 = 2 3/4 km.",
+      steps: ["Total = 5½ km, ran so far = 2¾ km", "LCD = 4:  5 2/4 − 2 3/4", "Fraction: 2/4 < 3/4 → borrow from whole", "5 2/4 → 4 6/4 (borrow 1 whole = 4/4)", "4 6/4 − 2 3/4:", "Whole: 4−2=2, Fraction: 6/4−3/4=3/4", "Answer: 2¾ km ✓"],
+    },
+    {
+      visual: "📦",
+      prompt: "A warehouse had 15,000 boxes. 6,348 were shipped. How many remain?",
+      options: ["8,652", "8,752", "9,652", "8,542"],
+      answer: 0,
+      steps: ["15,000 − 6,348", "Regroup through three zeros:", "14,999 + 1 = 15,000", "Ones: 10−8=2", "Tens: 9−4=5", "Hundreds: 9−3=6", "Thousands: 14−6=8", "Answer: 8,652 ✓"],
+    },
+    {
+      visual: "🌡️",
+      prompt: "Temperature dropped from 12.5°C to −3°C. By how many degrees did it fall?",
+      options: ["15.5°C", "9.5°C", "15°C", "16°C"],
+      answer: 0,
+      fact: "12.5 − (−3) = 12.5 + 3 = 15.5°C. Subtracting a negative = adding!",
+      steps: ["Start: 12.5°C, End: −3°C", "Change = 12.5 − (−3)", "Rule: subtracting a negative = adding!", "12.5 − (−3) = 12.5 + 3", "= 15.5°C ✓"],
+    },
+    {
+      visual: "⛽",
+      prompt: "Fuel tank: 50.4 L. After a trip, 18.75 L remains. How much was used?",
+      options: ["31.65 L", "32.35 L", "31.25 L", "29.65 L"],
+      answer: 0,
+      steps: ["Used = Full − Remaining", "50.40 − 18.75", "Hundredths: 0 < 5 → borrow: 10−5=5", "Tenths: 3 < 7 → borrow chain: 13−7=6", "Ones: 9 − 8 = 1", "Tens: 4 − 1 = 3", "Answer: 31.65 L ✓"],
+    },
+    {
+      visual: "📚",
+      prompt: "Book has 320 pages. Emma has read 147. How many pages to go?",
+      options: ["173", "183", "163", "193"],
+      answer: 0,
+      steps: ["Remaining = Total − Read", "320 − 147", "Ones: 0 < 7 → borrow: 10−7=3", "Tens: 1 < 4 → borrow: 11−4=7", "Hundreds: 2 − 1 = 1", "Answer: 173 pages ✓"],
+    },
+    {
+      visual: "🏦",
+      prompt: "Bank balance: $3,450.00. You spend $876.55. New balance?",
+      options: ["$2,573.45", "$2,473.45", "$2,674.45", "$2,583.45"],
+      answer: 0,
+      steps: ["$3,450.00 − $876.55", "Cents: 0 < 5 → borrow chain", "10−5=5¢, then 9−5=4 dimes", "Ones: 9 − 6 = 3", "Tens: 4 < 7 → borrow: 14−7=7", "Hundreds: 3 < 8 → borrow: 13−8=5", "Thousands: 2 − 0 = 2", "Answer: $2,573.45 ✓"],
+    },
+    {
+      visual: "🧪",
+      prompt: "Beaker had 5/6 L. 1/4 L evaporated. How much is left? (LCD = 12)",
+      options: ["7/12 L", "4/6 L", "1/2 L", "8/12 L"],
+      answer: 0,
+      fact: "5/6 = 10/12, 1/4 = 3/12. 10/12 − 3/12 = 7/12.",
+      steps: ["5/6 − 1/4 (different denominators)", "LCD of 6 and 4 = 12", "5/6 = 10/12 (×2 top and bottom)", "1/4 = 3/12 (×3 top and bottom)", "10/12 − 3/12 = 7/12 ✓"],
+    },
+    {
+      visual: "⏱️",
+      prompt: "Race takes 2 h 40 min. After 1 h 55 min, how long remains?",
+      options: ["45 min", "55 min", "1 hr 5 min", "40 min"],
+      answer: 0,
+      fact: "2h 40m − 1h 55m: borrow 1 hour → 1h 100m − 55m = 45 min.",
+      steps: ["2h 40m − 1h 55m", "Minutes: 40 < 55 → borrow 1 hour", "2h 40m → 1h 100m", "Minutes: 100 − 55 = 45", "Hours: 1 − 1 = 0", "Answer: 45 minutes ✓"],
+    },
+    {
+      visual: "🏗️",
+      prompt: "Project needs 10,000 bricks. 3,764 laid so far. How many left?",
+      options: ["6,236", "6,336", "7,236", "6,264"],
+      answer: 0,
+      steps: ["10,000 − 3,764", "Regroup through four zeros:", "10,000 → 9,999 + 1", "Ones: 10−4=6", "Tens: 9−6=3", "Hundreds: 9−7=2", "Thousands: 9−3=6", "Answer: 6,236 ✓"],
+    },
+    {
+      visual: "💰",
+      prompt: "You saved $500. Spend $127.49 then $83.75. How much left?",
+      options: ["$288.76", "$298.76", "$278.76", "$308.76"],
+      answer: 0,
+      fact: "$500 − $211.24 = $288.76.",
+      steps: ["Combine both spends first:", "$127.49 + $83.75 = $211.24", "Then: $500.00 − $211.24", "Hundredths: 0 < 4 → borrow chain", "Dollars: 499 − 211 (roughly)", "Answer: $288.76 ✓"],
+    },
+    {
+      visual: "🍕",
+      prompt: "Pizza has 8 slices. You eat 3, your brother eats 2. Fraction left?",
+      options: ["3/8", "5/8", "2/8", "1/2"],
+      answer: 0,
+      fact: "8/8 − 3/8 − 2/8 = 3/8.",
+      steps: ["Start with the whole: 8/8", "You eat: 8/8 − 3/8 = 5/8", "Brother eats: 5/8 − 2/8 = 3/8", "Or combine first: 3+2=5 eaten", "8 − 5 = 3 slices left = 3/8 ✓"],
+    },
+    {
+      visual: "🌊",
+      prompt: "Diver is at 42.6 m depth, swims up 17.85 m. New depth?",
+      options: ["24.75 m", "25.25 m", "24.25 m", "60.45 m"],
+      answer: 0,
+      steps: ["Swimming UP = subtracting depth", "42.60 − 17.85", "Hundredths: 0 < 5 → borrow: 10−5=5", "Tenths: 5 < 8 → borrow: 15−8=7", "Ones: 1 < 7 → borrow: 11−7=4", "Tens: 3 − 1 = 2", "New depth: 24.75 m ✓"],
+    },
+    {
+      visual: "🎯",
+      prompt: "What is 1,000,000 − 999,001?",
+      options: ["999", "1,001", "99", "9,999"],
+      answer: 0,
+      fact: "Don't let big numbers scare you — think addition!",
+      steps: ["999,001 + ? = 1,000,000", "Think: 999,001 + 999 = 1,000,000?", "Check: 999,001 + 999 = 1,000,000 ✓", "So 1,000,000 − 999,001 = 999 ✓", "Tip: use the addition inverse shortcut!"],
+    },
+  ]),
+};
+
 export const QUIZZES: Quiz[] = [
   girlAnimals, girlColors, girlPrincess, girlFriends, girlFlags, girlDays,
   boyFlags, boyCapitals, boyScience, boyChess, boyDragons, boyPokemon, boyMath, boySpace, boyLandmarks,
+  boyMathSubLesson, boyMathSubPractice, boyMathSubQuiz,
 ];
 
 export function getQuizzesByMode(mode: Mode) {

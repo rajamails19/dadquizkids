@@ -163,7 +163,7 @@ function QuizPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 pb-20">
+      <main className={`mx-auto px-6 pb-20 transition-all duration-300 ${q.steps?.length && !done ? "max-w-5xl" : "max-w-3xl"}`}>
         {/* Title strip */}
         <div className="glass mb-6 flex items-center gap-4 overflow-hidden rounded-3xl p-3">
           <img src={quiz.cover} alt="" width={1024} height={1024}
@@ -200,85 +200,125 @@ function QuizPage() {
         )}
 
         {!done ? (
-          <div key={animKey} className="glass question-enter rounded-3xl p-6 sm:p-10">
-            {/* Visual + prompt */}
-            <div className="grid place-items-center py-6">
-              <div
-                className={`heading text-center font-extrabold leading-none ${
-                  isBigEmoji ? "text-[8rem] sm:text-[10rem]" : "text-5xl sm:text-6xl"
-                }`}
-                style={{ filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.25))" }}
-              >
-                {q.visual}
+          <div
+            key={animKey}
+            className={`question-enter items-start gap-6 ${q.steps?.length ? "grid lg:grid-cols-[1fr_300px]" : "block"}`}
+          >
+            {/* ── Main question card ── */}
+            <div className="glass rounded-3xl p-6 sm:p-10">
+              {/* Visual + prompt */}
+              <div className="grid place-items-center py-6">
+                <div
+                  className={`heading text-center font-extrabold leading-none ${
+                    isBigEmoji ? "text-[8rem] sm:text-[10rem]" : "text-5xl sm:text-6xl"
+                  }`}
+                  style={{ filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.25))" }}
+                >
+                  {q.visual}
+                </div>
+                <p className="mt-4 max-w-xl text-center text-lg text-muted-foreground">
+                  {q.prompt}
+                </p>
               </div>
-              <p className="mt-4 max-w-xl text-center text-lg text-muted-foreground">
-                {q.prompt}
-              </p>
-            </div>
 
-            {/* Answer buttons — staggered entrance via CSS */}
-            <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              {q.options.map((opt: string, i: number) => {
-                const isPicked  = picked === i;
-                const isCorrect = i === q.answer;
-                const showState = picked !== null;
-                const emoji     = quiz.mode === "girl" && q.optionEmojis?.[i];
-                let cls = "answer-btn glass text-left rounded-2xl px-5 py-4 font-bold transition-all hover:-translate-y-0.5";
-                if (showState && isCorrect)
-                  cls += " ring-2 ring-[var(--color-success)] !bg-[color:var(--color-success)]/15";
-                else if (showState && isPicked && !isCorrect)
-                  cls += " ring-2 ring-[var(--color-destructive)] !bg-[color:var(--color-destructive)]/15";
-                else if (showState)
-                  cls += " opacity-60";
-                return (
-                  <button key={i} onClick={() => choose(i)} disabled={picked !== null} className={cls}>
-                    {emoji ? (
-                      <span className="mr-3 text-2xl">{emoji}</span>
+              {/* Answer buttons — staggered entrance via CSS */}
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                {q.options.map((opt: string, i: number) => {
+                  const isPicked  = picked === i;
+                  const isCorrect = i === q.answer;
+                  const showState = picked !== null;
+                  const emoji     = quiz.mode === "girl" && q.optionEmojis?.[i];
+                  let cls = "answer-btn glass text-left rounded-2xl px-5 py-4 font-bold transition-all hover:-translate-y-0.5";
+                  if (showState && isCorrect)
+                    cls += " ring-2 ring-[var(--color-success)] !bg-[color:var(--color-success)]/15";
+                  else if (showState && isPicked && !isCorrect)
+                    cls += " ring-2 ring-[var(--color-destructive)] !bg-[color:var(--color-destructive)]/15";
+                  else if (showState)
+                    cls += " opacity-60";
+                  return (
+                    <button key={i} onClick={() => choose(i)} disabled={picked !== null} className={cls}>
+                      {emoji ? (
+                        <span className="mr-3 text-2xl">{emoji}</span>
+                      ) : (
+                        <span className="mr-3 inline-grid h-7 w-7 place-items-center rounded-full bg-primary text-xs text-primary-foreground">
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                      )}
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Feedback row */}
+              {picked !== null && (
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-base font-semibold">
+                    {correct ? (
+                      <span className="text-[color:var(--color-success)]">
+                        {quiz.mode === "girl" ? girlPraise[index % 5] : "✓ Nice one!"}
+                      </span>
                     ) : (
-                      <span className="mr-3 inline-grid h-7 w-7 place-items-center rounded-full bg-primary text-xs text-primary-foreground">
-                        {String.fromCharCode(65 + i)}
+                      <span className="text-[color:var(--color-destructive)]">
+                        Almost! Correct: <span className="text-foreground">{q.options[q.answer]}</span>
                       </span>
                     )}
-                    {opt}
-                  </button>
-                );
-              })}
+                    {q.fact && (
+                      <div className="mt-1 text-sm font-normal text-muted-foreground">💡 {q.fact}</div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {correct && (
+                      <span className="text-xs text-muted-foreground animate-pulse">
+                        Auto-advancing…
+                      </span>
+                    )}
+                    <button
+                      onClick={next}
+                      className="glow rounded-2xl bg-primary px-6 py-3 font-bold text-primary-foreground"
+                    >
+                      {index + 1 >= total ? "See results →" : "Next →"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Feedback row */}
-            {picked !== null && (
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-base font-semibold">
-                  {correct ? (
-                    <span className="text-[color:var(--color-success)]">
-                      {quiz.mode === "girl" ? girlPraise[index % 5] : "✓ Nice one!"}
-                    </span>
-                  ) : (
-                    <span className="text-[color:var(--color-destructive)]">
-                      Almost! Correct: <span className="text-foreground">{q.options[q.answer]}</span>
-                    </span>
-                  )}
-                  {q.fact && (
-                    <div className="mt-1 text-sm font-normal text-muted-foreground">💡 {q.fact}</div>
-                  )}
+            {/* ── Step-by-step side panel (always visible when steps exist) ── */}
+            {q.steps?.length ? (
+              <div className="animate-[fadeIn_0.4s_ease] space-y-3">
+                {/* Header */}
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="text-2xl">🧠</span>
+                  <div>
+                    <div className="font-extrabold">Step by step</div>
+                    <div className="text-xs text-muted-foreground">Here's how we get there</div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {/* Auto-advance hint shown only on correct */}
-                  {correct && (
-                    <span className="text-xs text-muted-foreground animate-pulse">
-                      Auto-advancing…
+                {/* Steps — each floats freely */}
+                {q.steps.map((step: string, i: number) => (
+                  <div key={i} className="flex gap-3 rounded-2xl border border-border/40 bg-white/[0.04] px-4 py-3">
+                    <span className="mt-0.5 inline-grid h-5 w-5 flex-none place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {i + 1}
                     </span>
-                  )}
-                  <button
-                    onClick={next}
-                    className="glow rounded-2xl bg-primary px-6 py-3 font-bold text-primary-foreground"
-                  >
-                    {index + 1 >= total ? "See results →" : "Next →"}
-                  </button>
+                    <span className="font-mono text-sm leading-relaxed text-foreground/85">
+                      {step}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Bottom nudge */}
+                <div className="rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
+                  {picked === null
+                    ? "💡 Use these steps to help you answer!"
+                    : correct
+                      ? "✓ You got it! Steps helped you win."
+                      : "📌 Re-read the steps — then you'll get it!"}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         ) : (
           <ResultsCard

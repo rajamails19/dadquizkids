@@ -35,9 +35,16 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { mode } = useMode();
-  const quizzes = useMemo(() => getQuizzesByMode(mode), [mode]);
+  const allModeQuizzes = useMemo(() => getQuizzesByMode(mode), [mode]);
+  // Regular quizzes shown in the main grid (exclude section-grouped ones)
+  const quizzes = useMemo(() => allModeQuizzes.filter((q) => !q.section), [allModeQuizzes]);
+  // Math subtraction section
+  const mathSubQuizzes = useMemo(
+    () => allModeQuizzes.filter((q) => q.section === "math-subtraction"),
+    [allModeQuizzes],
+  );
   const hero = mode === "girl" ? heroGirl : heroBoy;
-  const totalQuestions = QUIZZES.filter((q) => q.mode === mode).reduce(
+  const totalQuestions = QUIZZES.filter((q) => q.mode === mode && !q.section).reduce(
     (n, q) => n + q.questions.length,
     0,
   );
@@ -47,6 +54,13 @@ function Index() {
   useEffect(() => {
     setRandomId(quizzes[Math.floor(Math.random() * quizzes.length)]?.id);
   }, [quizzes]);
+
+  // Accent colours per math-subtraction card label
+  const mathLabelStyle: Record<string, { badge: string; glow: string }> = {
+    "📖 Lesson":   { badge: "from-sky-400 to-blue-500",        glow: "shadow-sky-400/30" },
+    "✏️ Practice": { badge: "from-emerald-400 to-teal-500",    glow: "shadow-emerald-400/30" },
+    "🏆 Quiz":     { badge: "from-violet-400 to-purple-600",   glow: "shadow-violet-400/30" },
+  };
 
   return (
     <div className="min-h-screen">
@@ -268,6 +282,82 @@ function Index() {
           ))}
         </div>
       </section>
+
+      {/* ── Math Zone (boy mode only) ── */}
+      {mode === "boy" && mathSubQuizzes.length > 0 && (
+        <section className="mx-auto max-w-7xl px-6 pb-24">
+          {/* Section header */}
+          <div className="mb-8">
+            <div className="glass mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              🔢 Math Zone · 5th Grade
+            </div>
+            <h2 className="heading text-3xl font-extrabold sm:text-4xl">
+              Subtraction Mastery
+            </h2>
+            <p className="mt-1 text-muted-foreground">
+              Three levels — understand it, drill it, prove it. Go in order for best results.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-3">
+            {mathSubQuizzes.map((q, i) => {
+              const style = mathLabelStyle[q.sectionLabel ?? ""] ?? { badge: "from-primary to-accent", glow: "shadow-primary/20" };
+              const stepNum = ["01", "02", "03"][i] ?? "0" + (i + 1);
+              return (
+                <Link
+                  key={q.id}
+                  to="/quiz/$quizId"
+                  params={{ quizId: q.id }}
+                  className={`glass group relative flex flex-col overflow-hidden rounded-3xl p-0 transition-all hover:-translate-y-1 hover:shadow-2xl ${style.glow}`}
+                >
+                  {/* Cover image */}
+                  <div className="relative aspect-[5/3] overflow-hidden">
+                    <img
+                      src={q.cover}
+                      alt={q.title}
+                      loading="lazy"
+                      width={1024}
+                      height={640}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                    {/* Step badge — top left */}
+                    <span className="absolute left-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/20 text-xs font-extrabold text-white backdrop-blur-sm">
+                      {stepNum}
+                    </span>
+
+                    {/* Label badge — top right */}
+                    <span className={`absolute right-3 top-3 rounded-full bg-gradient-to-r ${style.badge} px-3 py-1 text-[11px] font-extrabold text-white shadow-lg`}>
+                      {q.sectionLabel}
+                    </span>
+
+                    {/* Title block — bottom */}
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <div className="heading text-xl font-extrabold text-white drop-shadow">{q.title}</div>
+                      <div className="text-xs font-medium text-white/85 drop-shadow">{q.tagline}</div>
+                    </div>
+                  </div>
+
+                  {/* Footer row */}
+                  <div className="flex items-center justify-between p-4">
+                    <span className="text-sm text-muted-foreground">{q.questions.length} questions</span>
+                    <span className={`rounded-full bg-gradient-to-r ${style.badge} px-3 py-1.5 text-xs font-bold text-white`}>
+                      Start ▸
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Progress hint */}
+          <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="glass rounded-full px-3 py-1 text-xs font-semibold">💡 Pro tip</span>
+            Do Lesson → Practice → Quiz in order for the full learning loop.
+          </div>
+        </section>
+      )}
 
       <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
         Made with ✨ for curious kids. Toggle Girl / Boy any time.
