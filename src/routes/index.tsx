@@ -43,6 +43,11 @@ function Index() {
     () => allModeQuizzes.filter((q) => q.section === "math-subtraction"),
     [allModeQuizzes],
   );
+  // Math division section
+  const mathDivQuizzes = useMemo(
+    () => allModeQuizzes.filter((q) => q.section === "math-division"),
+    [allModeQuizzes],
+  );
   const hero = mode === "girl" ? heroGirl : heroBoy;
   const totalQuestions = QUIZZES.filter((q) => q.mode === mode && !q.section).reduce(
     (n, q) => n + q.questions.length,
@@ -352,6 +357,71 @@ function Index() {
           </div>
 
           {/* Progress hint */}
+          <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="glass rounded-full px-3 py-1 text-xs font-semibold">💡 Pro tip</span>
+            Do Lesson → Practice → Quiz in order for the full learning loop.
+          </div>
+        </section>
+      )}
+
+      {/* ── Division Zone (boy mode only) ── */}
+      {mode === "boy" && mathDivQuizzes.length > 0 && (
+        <section className="mx-auto max-w-7xl px-6 pb-24">
+          <div className="mb-8">
+            <div className="glass mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              🔢 Math Zone · 5th Grade
+            </div>
+            <h2 className="heading text-3xl font-extrabold sm:text-4xl">
+              Division Mastery
+            </h2>
+            <p className="mt-1 text-muted-foreground">
+              Three levels — understand it, drill it, prove it. Go in order for best results.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-3">
+            {mathDivQuizzes.map((q, i) => {
+              const style = mathLabelStyle[q.sectionLabel ?? ""] ?? { badge: "from-primary to-accent", glow: "shadow-primary/20" };
+              const stepNum = ["01", "02", "03"][i] ?? "0" + (i + 1);
+              return (
+                <Link
+                  key={q.id}
+                  to="/quiz/$quizId"
+                  params={{ quizId: q.id }}
+                  className={`glass group relative flex flex-col overflow-hidden rounded-3xl p-0 transition-all hover:-translate-y-1 hover:shadow-2xl ${style.glow}`}
+                >
+                  <div className="relative aspect-[5/3] overflow-hidden">
+                    <img
+                      src={q.cover}
+                      alt={q.title}
+                      loading="lazy"
+                      width={1024}
+                      height={640}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <span className="absolute left-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/20 text-xs font-extrabold text-white backdrop-blur-sm">
+                      {stepNum}
+                    </span>
+                    <span className={`absolute right-3 top-3 rounded-full bg-gradient-to-r ${style.badge} px-3 py-1 text-[11px] font-extrabold text-white shadow-lg`}>
+                      {q.sectionLabel}
+                    </span>
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <div className="heading text-xl font-extrabold text-white drop-shadow">{q.title}</div>
+                      <div className="text-xs font-medium text-white/85 drop-shadow">{q.tagline}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4">
+                    <span className="text-sm text-muted-foreground">{q.questions.length} questions</span>
+                    <span className={`rounded-full bg-gradient-to-r ${style.badge} px-3 py-1.5 text-xs font-bold text-white`}>
+                      Start ▸
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
           <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
             <span className="glass rounded-full px-3 py-1 text-xs font-semibold">💡 Pro tip</span>
             Do Lesson → Practice → Quiz in order for the full learning loop.
